@@ -22,7 +22,7 @@ The algorithm is tested on SwitchFL, in which each junction cell is modeled as a
 
 
 #### SwitchFL
-**SwitchFL** is a custom **multi-agent reinforcement learning (MARL)** environment based on [Flatland](https://flatland.aicrowd.com/getting-started/env.html), designed with a novel **switch-centered** perspective. This environment shifts the focus of control from individual trains to **railway switches**, introducing unique coordination and planning challenges in a rail network.
+[**SwitchFL**](https://github.com/gvlos/SwitchFL) is a custom **multi-agent reinforcement learning (MARL)** environment based on [Flatland](https://flatland.aicrowd.com/getting-started/env.html), designed with a novel **switch-centered** perspective. This environment shifts the focus of control from individual trains to **railway switches**, introducing unique coordination and planning challenges in a rail network.
 
 
 ## Motivation
@@ -92,4 +92,4 @@ A folder will be created with one subfolder for each parameter configuration. In
 
 ## Reproducing experiments
 
-In order to reproduce the experiment presented in the slides you can run the file *hyperparam_tuning* as is and use the *plot.ipynb* file to plot the same curves. For the evaluation plot you need first to run *eval.py* by specifying the set of experiment directories to evaluate and the name of the RL model. It will create a folder *eval_x* with three files that can be used for plotting (*cum_rewards.npy*, *delays.npz*, *trains_at_dest*)
+In order to reproduce the experiment presented in the slides you can run the file *hyperparam_tuning* as is and use the *plot.ipynb* file to plot the same curves. For the evaluation plot you need first to run *eval.py* by specifying the set of experiment directories to evaluate and the name of the RL model. It will create a subfolder *eval_x* with three files that can be used for plotting (*cum_rewards.npy*, *delays.npz*, *trains_at_dest.npz*)
