@@ -8,26 +8,6 @@ from flatland.utils.rendertools import AgentRenderVariant
 from switchfl.utils.naming import get_node_id_on_port_id
 import time
 
-# flatland directions
-# class Grid4TransitionsEnum(IntEnum):
-#     NORTH = 0
-#     EAST = 1
-#     SOUTH = 2
-#     WEST = 3
-
- # actions
-# DO_NOTHING: 0
-# MOVE_LEFT: 1
-# MOVE_FORWARD: 2
-# MOVE_RIGHT: 3
-# STOP_MOVING: 4
-
-# switchfl directions
-# .1 = EAST
-# .2 = NORTH
-# .3 = WEST
-# .4 = SOUTH
-
 class DistrQLearning:
     """
     DistrQLearning is a class that implements a Distributed Q-learning agent.
@@ -234,15 +214,9 @@ class DistrQLearning:
             post_step_info = self.env.step(action)
 
             if plot:
-                a = self.env.rail_env.render()  # (agent_render_variant=AgentRenderVariant.AGENT_SHOWS_OPTIONS, show_debug=True)
+                a = self.env.rail_env.render()
                 fig, ax = plt.subplots(figsize=(8,8))
                 plt.imshow(a)
-                # ax.set_xticks(np.arange(0, a.shape[0], a.shape[0]/self.env.rail_env.width), minor=False)
-                # ax.set_yticks(np.arange(0, a.shape[0], a.shape[0]/self.env.rail_env.height), minor=False)
-                # ax.xaxis.grid(True, which='major', color='black', linestyle='--')
-                # ax.yaxis.grid(True, which='major', color='black', linestyle='--')
-                # ax.set_xticklabels(np.arange(self.env.rail_env.width))
-                # ax.set_yticklabels(np.arange(self.env.rail_env.height))
                 plt.savefig(os.path.join(out_dir, f"iter_{num_iter}.png"), dpi=300)
                 plt.close()
 
@@ -297,7 +271,6 @@ class DistrQLearning:
         last_time = 0.
         action_selection_time = 0.
         update_time = 0.
-        # reset_time = 0.
 
         for t in range(num_episodes):
 
@@ -320,9 +293,7 @@ class DistrQLearning:
                 np.savez_compressed(os.path.join(out_dir, f'trains_at_dest_checkpoint_{t+1}.npz'), x=trains_at_destination)
                 np.savez_compressed(os.path.join(out_dir, f'num_malfunctions_checkpoint_{t+1}.npz'), x=num_malfunctions)                
 
-            # start_reset_time = time.time()
             self.env.reset(seed=self.seed)
-            # reset_time += time.time() - start_reset_time
 
             # Init q table
             if t == 0:
@@ -334,9 +305,6 @@ class DistrQLearning:
                 observation, reward, termination, truncation, info = self.env.last()
                 reward = reward[self.env.active_train]
                 last_time += time.time() - start_last_time
-                # print("--------------------------------------")
-                # print(f"Observation: {observation}")
-                # print(f"Reward: {reward}")
                 
                 if termination or truncation:
                     break
@@ -347,10 +315,8 @@ class DistrQLearning:
                 if rng.random() < self.epsilon[agent]:
                     self.env.action_space(agent).seed(int(rng.integers(0, np.iinfo(np.int32).max)))
                     action = self.env.action_space(agent).sample(info["action_mask"])
-                    # print(f"Sampled action: {action}")
                 else:
                     action = self.max_action(observation, agent, info["action_mask"])
-                    # print(f"Max action: {action}")
                 action_selection_time += time.time() - start_action_selection_time
 
                 post_step_info = self.env.step(action)
@@ -364,7 +330,6 @@ class DistrQLearning:
                     previous_obs = update_dict[(agent_id, active_train)][0]
                     previous_act = update_dict[(agent_id, active_train)][1]
                     previous_agent = update_dict[(agent_id, active_train)][2]
-                    # print(f"Updating Q-values: agent={previous_agent}, obs={previous_obs}, act={previous_act} with reward={reward}, next state={observation}, next_agent={agent}")
                     self.update(state=previous_obs, action=previous_act,
                                 reward=reward, next_state=observation,
                                 previous_agent=previous_agent,
@@ -383,7 +348,6 @@ class DistrQLearning:
 
                         for (upd_agent, upd_train), (upd_obs, upd_act, upd_previous_agent) in list(update_dict.items()):
                             if upd_train == train:
-                                # print(f"Updating Q-values for ARRIVED TRAIN: agent={upd_previous_agent}, obs={upd_obs}, act={upd_act} with reward={500}, next state=None, next_agent=None")
                                 self.update(state=upd_obs, action=upd_act,
                                             reward=self.destination_bonus, next_state=None,
                                             previous_agent=upd_previous_agent,
@@ -396,18 +360,6 @@ class DistrQLearning:
                 cum_reward[t] += reward
                 num_iter += 1
                 agent_num_interactions[agent] += 1
-
-                # a = self.env.rail_env.render(agent_render_variant=AgentRenderVariant.AGENT_SHOWS_OPTIONS, show_debug=True)
-                # fig, ax = plt.subplots(figsize=(8,8))
-                # plt.imshow(a)
-                # ax.set_xticks(np.arange(0, a.shape[0], a.shape[0]/self.env.rail_env.width), minor=False)
-                # ax.set_yticks(np.arange(0, a.shape[0], a.shape[0]/self.env.rail_env.height), minor=False)
-                # ax.xaxis.grid(True, which='major', color='black', linestyle='--')
-                # ax.yaxis.grid(True, which='major', color='black', linestyle='--')
-                # ax.set_xticklabels(np.arange(self.env.rail_env.width))
-                # ax.set_yticklabels(np.arange(self.env.rail_env.height))
-                # plt.savefig(os.path.join(out_dir, f"learn_iter_{num_iter}.png"), dpi=300)
-                # plt.close()
 
             arrived_trains.append(len(post_step_info["arrived_trains"]))
             delays.append([v[1] for v in list(self.env.train_to_last_node.values())])
@@ -424,7 +376,6 @@ class DistrQLearning:
         self.env.last_time = last_time
         self.env.action_selection_time = action_selection_time
         self.env.update_time = update_time
-        # self.env.reset_time = reset_time
         self.env.close()
 
     def _get_next_q_agent(self, agent, action):
@@ -494,8 +445,6 @@ class DistrQLearning:
             self.q_table[tuple(state)][action] = \
                 (1 - self.lr[previous_agent]) * self.q_table[tuple(state)][action] + \
                 self.lr[previous_agent] * reward         
-        # print(f"New Q-entry: {self.q_table[tuple(state)]}")
-        # print("")
 
     def max_q(self, state, agent):
         """
@@ -532,8 +481,6 @@ class DistrQLearning:
         """
         self.__check_entry(state, agent)
         max_q = np.argmax(self.q_table[tuple(state)])
-        # print(f"Action mask={action_mask}")
-        # print(f"Q-entry: {self.q_table[tuple(state)]}")
         if action_mask[max_q]:
             return max_q
         else:

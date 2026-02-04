@@ -26,9 +26,9 @@ def launch_experiment(config_path):
     exploit_freq = int(config["MISC"]["exploit_freq"])
 
     stochastic_data = MalfunctionParameters(
-        malfunction_rate=float(config["ENV"]["malfunction_rate"]),  # Rate of malfunction occurence
-        min_duration=int(config["ENV"]["min_duration"]),  # Minimal duration of malfunction
-        max_duration=int(config["ENV"]["max_duration"])  # Max duration of malfunction
+        malfunction_rate=float(config["ENV"]["malfunction_rate"]),
+        min_duration=int(config["ENV"]["min_duration"]),  
+        max_duration=int(config["ENV"]["max_duration"])
     )
     mf = ParamMalfunctionGen(stochastic_data)
 
@@ -86,8 +86,5 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     launch_experiment(args.config)
-
-    # config_path = "/home/gianvito/Desktop/test_config/exp_0/config.ini"
-    # launch_experiment(config_path)
 
 

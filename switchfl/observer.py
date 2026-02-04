@@ -34,15 +34,11 @@ def compute_delay(rail_env: RailEnv, train: TrainAgent, position, direction, ear
     
     if np.isinf(min_dist_to_target):
         raise ValueError("Infinite distance to target encountered.")
-
-    # shortest_path = rail_env.distance_map.get_shortest_paths(max_depth=None, agents = rail_env.agents, agent_handle=train.handle)[train.handle]
-    # min_dist_to_target = len(shortest_path) - 1
     
     if earliest_departure:
         delay = train.earliest_departure - train.latest_arrival + min_dist_to_target
     else:
         delay = rail_env._elapsed_steps - train.latest_arrival + min_dist_to_target
-    # assume you are moving with max speed=1
     return delay
 
 def check_port_blocked(next_port, out_port, train_agent_handle, rail_network: RailNetwork) -> bool:

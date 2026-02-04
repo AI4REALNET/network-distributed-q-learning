@@ -93,7 +93,6 @@ if __name__=='__main__':
             with open(config_path, 'w') as configfile:
                 config.write(configfile)
 
-            # cmd = f"source {venv_dir}/bin/activate && which python3 &> out.out && python3 main.py -c {config_path} 1>{os.path.join(exp_dir, "stdout.out")} 2>{os.path.join(exp_dir, "stderr.err")} &"        
             cmd = f"python main.py -c {config_path} 1>{os.path.join(exp_dir, "stdout.out")} 2>{os.path.join(exp_dir, "stderr.err")} &"
 
             try:
