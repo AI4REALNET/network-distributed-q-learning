@@ -1,21 +1,28 @@
-# SwitchFL: Switch-Centered Flatland Environment for Multi-Agent Reinforcement Learning
+# Network-distributed Q-learning
 
-Welcome to **SwitchFL**, a custom **multi-agent reinforcement learning (MARL)** environment based on [Flatland](https://flatland.aicrowd.com/getting-started/env.html), designed with a novel **switch-centered** perspective. This environment shifts the focus of control from individual trains to **railway switches**, introducing unique coordination and planning challenges in a rail network.
+#### Short description of the algorithm
+The Network-distributed Q-learning algorithm is a distributed version of the popular [Q-Learning algorithm](https://link.springer.com/article/10.1007/BF00992698).
+
+The original update of state-value function of an agent according to the Q-learning algorithm is:
+
+$$
+Q(s,a) = (1-\alpha) Q(s,a) + \alpha(r + \gamma\max_{a'} Q(s,a'))
+$$
+
+The distributed version instead has the following update for each agent:
+
+$$
+Q(s,a) = (1-\alpha) Q(s,a) + \alpha(r + \gamma\max_{a'} Q_{\text{next}}(s,a'))
+$$
+
+where $Q_{\text{next}}$ is the state-value function of the successor agent, i.e., the successor node in the graph.
+
+The algorithm is tested on SwitchFL, in which each junction cell is modeled as a node in the graph. Each node is an independent RL agent that exchanges information with the successor node, i.e., where the train is sent starting from the current node.
 
 
-## Table of Contents
 
-- [Motivation](#motivation)
-- [Environment Overview](#environment-overview)
-- [Switch Types](#switch-types)
-- [Installation](#installation)
-- [Usage Example](#usage-example)
-- [Observation Space](#observation-space)
-- [Action Space](#action-space)
-- [Rendering](#rendering)
-- [Research & Use Cases](#research--use-cases)
-- [Contributing](#contributing)
-- [License](#license)
+#### SwitchFL
+**SwitchFL** is a custom **multi-agent reinforcement learning (MARL)** environment based on [Flatland](https://flatland.aicrowd.com/getting-started/env.html), designed with a novel **switch-centered** perspective. This environment shifts the focus of control from individual trains to **railway switches**, introducing unique coordination and planning challenges in a rail network.
 
 
 ## Motivation
@@ -28,205 +35,61 @@ It’s particularly useful for:
 - Benchmarking switch-based vs. agent-based control.
 
 
+#### Overview of code structure
+:open_file_folder: **network-distributed q-learning**
 
-## Environment Overview
+├── :open_file_folder: flatland patch
 
-**SwitchFL** is built on top of Flatland but wrapped in a **PettingZoo-compatible asynchronous multi-agent interface**.
+│   └── ...
 
-### Key Features:
-- **Asynchronous MARL environment**
-- **Switch-centered control abstraction**
-- Compatible with **PettingZoo (AEC)** interface
-- Supports **Flatland and networkx rendering** 
-- Includes **4 types of switches** with varying complexity as agent types
+├── :open_file_folder: switchfl
+
+│   └── ...
+
+├── eval.py
+
+├── hyperparam_tuning.py
+
+├── main.py
+
+├── plot.ipynb
+
+├── test_model.py
 
 
-## Switch Types
-
-![switch types](images/switch_types.png)
-SwitchFL includes the following switch types:
-
-1. **T-Crossing**  
-   Allows branching paths in a T shape (3-way split). This applies to case 2 and 6.
-
-2. **Standard Crossing**  
-   Classic railway cross with two intersecting paths (4-way cross). This applies to case 3.
-
-3. **Single Turn Switch**  
-   A switch with one 90° turn and two straight connections. This applies to case 4.
-
-4. **Double Turn Switch**  
-   A complex crossing with **two 90° turns**, offering multiple routing options. This applies to case 5.
-
-Each switch is treated as an agent with its own observation and decision-making responsibility.
+The folder *flatland_patch* contains the patch to the Flatland environment, the folder *switchfl* contains the implementation of the SwitchFL environment and the network-distributed Q-learning algorithm. The python scripts *main.py*, *eval.py*, *hyperaparam_tuning.py*, *test_model.py*, *plot.py* can be used to train and test the algorithm, plot the figures of the experiments.
 
 
 ## Installation
 
-we opted for poetry as the package-management system: 
+Create a virtual environment and install all the dependencies
+
 ```bash
-git clone https://github.com/yourusername/switchfl.git
-cd switchfl
-poetry install
+python -m venv <my_venv>
+source <my_venv>/bin/activate
+pip install -r requirements.txt
 ```
 
-Ensure you have the following installed:
+Apply the patch to Flatland. In the folder `<my_venv>/lib/python3.x/site-packages/flatland/envs` replace the files contained in the folder *flatland_patch*.
 
-* `flatland-rl`
-* `pettingzoo`
-* `numpy`
-* `pygame` (for rendering)
-* `matplotlib` (optional, for visual debugging)
+## Usage Example (Input/Output)
 
+You can test the library by runnning the file *test_model.py*. Edit the environment configuration variables and run the script. The result will be a folder with the following content
 
-
-## Usage Example
-
-```python
-from flatland.envs.rail_env import RailEnv
-from flatland.envs.rail_generators import sparse_rail_generator
-from flatland.envs.line_generators import sparse_line_generator
-from switchfl.switch_env import ASyncSwitchEnv
-
-random_seed = 41
-rail_env = RailEnv(
-    width=18,
-    height=18,
-    rail_generator=sparse_rail_generator(
-        max_num_cities=5,
-        grid_mode=True,
-        max_rails_between_cities=1,
-        max_rail_pairs_in_city=1,
-        seed=random_seed,
-    ),
-    line_generator=sparse_line_generator(seed=random_seed),
-    number_of_agents=2,
-)
-
-env = ASyncSwitchEnv(rail_env, render_mode="human")
-
-env.reset(seed=random_seed)
-for agent in env.agent_iter():
-    observation, reward, termination, truncation, info = env.last()
-    
-    if termination or truncation:
-        break
-    
-    # Replace with your custom switch policy
-    action = env.action_space(agent).sample(info["action_mask"])
-    env.render()
-    env.step(action)
-
-env.close()
-```
-
-> ℹ️ Info
->
-> Please note, that we deviate slightly from the petting zoo framework as we also return the id of the next switch the train will reach after a step. This is going to help for approaches in RL which use TD learning as we need here some kind of notation for the next state. Otherwise the decision making of a switch agent will turn to a Multi-Armed-Bandit (MAB). 
+- *arrived_trains.npz* contains the number of the trains that have reached the target station (for each training episode)
+- *arrived_trains_exploit.npz* contains the number of trains that have reached the target station with the greedy policy (for each exploit checkpoint)
+- *cum_reward.npz* contains the cumulative rewards over the training episodes
+- *cum_reward_exploit.npz* contains the cumulative rewards over the training episodes by using the greedy policy
+- *delays.npz* contains the final delays for each train
+- *distr_q_model.pkl* contains the Q-tables of the agents
+- *num_malfunctions.npz* contains the number of malfunctions happened over the training episodes
+- *trains_at_dest.npz* contains the ID of the trains that have reached the target station
 
 
-## Observation Space
-
-Each agent (switch) receives a localized view of its surroundings:
-
-* Switch state and occupancy
-* Train proximity or scheduling info
-* Track layout around the switch
-
-The environment is equipped with a `Observer` scaffold. Therefor you can design your own observation space for a switch agent.  
-As a default option we use the `StandardObserver` which can be found [here](switchfl/observer.py). This observer is discrete and includes:
-
-- which outgoing ports are blocked by incoming trains
-- where does an incoming would like to go
-- how much delay does a train have
-
-If there is no train to extract this knowledge from the corresponding spots in an observation are -1.  
-
-## Action Space
-
-Each switch decides which path to activate. The action space is:
-
-* Discrete
-* Action-masked (invalid options are masked out via `info["action_mask"]`)
-
-Each discrete action corresponds to piping a train from one port to another if applicable. This results in different amount of available actions for an agent: 
-1. **T-Crossing**: 4
-2. **Standard Crossing**: 2
-3. **Single Turn Switch**: 6    
-4. **Double Turn Switch**: 8
-
-For more details please refer to the [`switch definitions`](switchfl/switch_agents.py) or print `actions` of an `_Switch`    instance. 
-
-## Rendering
-
-SwitchFL supports human-friendly rendering via Flatland’s renderer:
-
-```python
-env = ASyncSwitchEnv(..., render_mode="human")
-env.render()
-```
-
-Use this to visually debug the movement of trains and decisions made by switches.
-
-## Implementation Details
-
-SwitchFL transforms Flatland's train-centric approach into a **switch-centric multi-agent system** through several key components:
-
-- **ASyncSwitchEnv**: Main environment controller that orchestrates train movement simulation, agent activation, and reward calculation
-- **RailNetwork**: Manages railway topology, switch-to-switch connections, and train-switch interactions using graph representations
-- **Switch Agents**: Individual controllers for different switch types (T-Crossing, Standard Crossing, Single/Double Turn) with unique action spaces
-- **RailGraph**: Converts Flatland's grid-based environment into efficient graph structures for network analysis
-- **Observer System**: Provides localized state observations including train proximity, port status, and network topology
-
-The environment operates through an **asynchronous simulation loop** where trains move toward switches, switches become active agents when trains approach, and routing decisions are executed based on agent actions. This creates a distributed control system where coordination emerges through individual switch decisions.
-
-For comprehensive implementation details, architecture diagrams, and technical challenges, please refer to the [detailed documentation](switchfl/README.md).
+You can run a single or multiple experiment with the file *hyperparam_tuning.py*. Experiments will be run in parallel.
+A folder will be created with one subfolder for each parameter configuration. Inside each subfolder there will be other subfolders corresponding to the different runs of the experiments (different seeds). The content of each such folder is analogous to the content explained before.
 
 
+## Reproducing experiments
 
-
-## Research & Use Cases
-
-SwitchFL is a great platform for:
-
-* Investigating coordination under partial observability.
-* Benchmarking asynchronous vs. synchronous control paradigms.
-* Studying traffic bottlenecks and switch prioritization strategies.
-* Applying transformer-based policies or graph RL to transportation systems.
-
-
-## Contributing
-
-We welcome contributions! To contribute:
-
-1. Fork this repository.
-2. Create a new branch (`git checkout -b feature-foo`)
-3. Commit your changes (`git commit -am 'Add feature foo'`)
-4. Push to the branch (`git push origin feature-foo`)
-5. Open a Pull Request.
-
-
-## License
-
-MIT License. See [LICENSE](./LICENSE) for details.
-
-
-
-## Authors
-
-If you use this code in your research, please cite:
-
-```bibtex
-@misc{uhrich2025gbidiff,
-  title={SwitchFL: Switch-Centered Flatland Environment for Multi-Agent Reinforcement Learning},
-  author={Uhrich, Robin and Mussi, Marco and Restelli, Marcello},
-  year={2025},
-  url={https://github.com/RobinU434/SwitchFL}
-}
-```
-
-## Related Projects
-
-* [Flatland](https://flatland.aicrowd.com/getting-started/env.html)
-* [PettingZoo](https://pettingzoo.farama.org/)
-        
+In order to reproduce the experiment presented in the slides you can run the file *hyperparam_tuning* as is and use the *plot.ipynb* file to plot the same curves. For the evaluation plot you need first to run *eval.py* by specifying the set of experiment directories to evaluate and the name of the RL model. It will create a folder *eval_x* with three files that can be used for plotting (*cum_rewards.npy*, *delays.npz*, *trains_at_dest*)

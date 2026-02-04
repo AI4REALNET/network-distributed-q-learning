@@ -7,45 +7,32 @@ import pathlib
 
 if __name__=='__main__':
     
-    # Define hyperparameter search space and other experiment settings
-
-    # Each random seed corresponds to a different run for the same hyperparameter setting
-    random_seeds = [18, 20, 21, 13, 37]
-
-    # Output directory for all experiments
-    out_dir = "/home/gianvito/Desktop/flatland_exp/debug"
+    random_seeds = [64, 65, 66, 67, 69]
+    out_dir = "your/output/directory/here"
     
-    num_episodes = 5
-    checkpoint_freq = 5_000  # checkpoint every n episodes
-    exploit_freq = 1  # exploit every n episodes
+    num_episodes = 10_000
+    checkpoint_freq = 1_000
 
-    # Environment parameters
-    width = 40
-    height = 40
-    max_num_cities = 7
-    max_rails_between_cities = 1
-    max_rail_pairs_in_city = 1
-    number_of_agents = 5
+    width = 80
+    height = 80
+    max_num_cities = 25
+    max_rails_between_cities = 2
+    max_rail_pairs_in_city = 2
+    number_of_agents = 15
     malfunction_rate = 0.
     min_duration = 0
     max_duration = 0
 
-    # Hyperparameter search space
     hyperparams = {
-        "epsilon" : [0.4],
-        "epsilon_decay_rate" : [0.999],
+        "epsilon" : [0.5],
+        "epsilon_decay_rate" : [0.9997],
         "lr" : [0.1],
         "lr_decay_rate" : [1.0],
     }
 
-    # Fixed learning parameters
     gamma = 1.
     default_q = 0.
 
-    
-
-    # ----------------------------------------------------------------------
-    # DO NOT MODIFY BELOW THIS LINE
     # ----------------------------------------------------------------------
 
     model_param_list = list((dict(zip(hyperparams.keys(), values)) 
@@ -63,8 +50,7 @@ if __name__=='__main__':
             config["MISC"] = {
                 "random_seed" : random_seed,
                 "out_dir" : exp_dir,
-                "checkpoint_freq" : checkpoint_freq,
-                "exploit_freq" : exploit_freq
+                "checkpoint_freq" : checkpoint_freq
             }
 
             config["ENV"] = {
@@ -93,6 +79,7 @@ if __name__=='__main__':
             with open(config_path, 'w') as configfile:
                 config.write(configfile)
 
+            # cmd = f"source {venv_dir}/bin/activate && which python3 &> out.out && python3 main.py -c {config_path} 1>{os.path.join(exp_dir, "stdout.out")} 2>{os.path.join(exp_dir, "stderr.err")} &"        
             cmd = f"python main.py -c {config_path} 1>{os.path.join(exp_dir, "stdout.out")} 2>{os.path.join(exp_dir, "stderr.err")} &"
 
             try:
