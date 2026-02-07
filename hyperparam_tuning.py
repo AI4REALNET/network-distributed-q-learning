@@ -12,6 +12,7 @@ if __name__=='__main__':
     
     num_episodes = 10_000
     checkpoint_freq = 1_000
+    exploit_freq = 100
 
     width = 80
     height = 80
@@ -50,7 +51,8 @@ if __name__=='__main__':
             config["MISC"] = {
                 "random_seed" : random_seed,
                 "out_dir" : exp_dir,
-                "checkpoint_freq" : checkpoint_freq
+                "checkpoint_freq" : checkpoint_freq,
+                "exploit_freq" : exploit_freq
             }
 
             config["ENV"] = {
